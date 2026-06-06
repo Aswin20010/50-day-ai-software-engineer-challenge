@@ -1,0 +1,626 @@
+{
+  "api": {
+    "name": "Evaluate Transaction Discount API",
+    "description": "Evaluates whether a customer transaction is eligible for employee discount or new account discount.",
+    "method": "POST",
+    "path": "/api/v1/discount/evaluateTransactionDiscount",
+    "contentType": "application/json"
+  },
+  "headers": [
+    {
+      "name": "requestorInfo-clientId",
+      "required": true,
+      "description": "Client application identifier"
+    },
+    {
+      "name": "requestorInfo-subclientId",
+      "required": true,
+      "description": "Sub-client application identifier"
+    },
+    {
+      "name": "requestorInfo-traceId",
+      "required": false,
+      "description": "Optional trace identifier for request tracking"
+    },
+    {
+      "name": "requestorinfo-version",
+      "required": false,
+      "description": "Optional requestor version"
+    },
+    {
+      "name": "x-macys-apikey",
+      "required": true,
+      "description": "API key used for authentication"
+    },
+    {
+      "name": "x-hmac-secret",
+      "required": true,
+      "description": "Secret used to generate HMAC signature for downstream service calls"
+    }
+  ],
+  "requestBody": {
+    "fields": [
+      {
+        "path": "account.encryptInfo.encryptedData",
+        "type": "string",
+        "required": true,
+        "description": "Encrypted account data",
+        "allowedValues": []
+      },
+      {
+        "path": "account.encryptInfo.keyType",
+        "type": "string",
+        "required": true,
+        "description": "Encryption key type",
+        "allowedValues": [
+          "AES",
+          "RSA",
+          "IRN",
+          "AES_PAN",
+          "TOKEN",
+          "MAN",
+          "AES_RSA_HYBRID",
+          "CLEAR_TEXT",
+          "EZ_ENCRYPTION",
+          "ECV1",
+          "ECV2"
+        ]
+      },
+      {
+        "path": "account.encryptInfo.keyName",
+        "type": "string",
+        "required": true,
+        "description": "Encryption key name",
+        "allowedValues": []
+      },
+      {
+        "path": "account.encryptInfo.keyVersion",
+        "type": "string",
+        "required": true,
+        "description": "Encryption key version",
+        "allowedValues": []
+      },
+      {
+        "path": "account.encryptInfo.division",
+        "type": "integer",
+        "required": true,
+        "description": "Account division number",
+        "allowedValues": []
+      },
+      {
+        "path": "account.encryptInfo.storeNbr",
+        "type": "integer",
+        "required": true,
+        "description": "Account store number",
+        "allowedValues": []
+      },
+      {
+        "path": "account.encryptInfo.aesType",
+        "type": "string",
+        "required": false,
+        "description": "Optional AES type",
+        "allowedValues": []
+      },
+      {
+        "path": "account.entryMode",
+        "type": "string",
+        "required": true,
+        "description": "Account entry mode",
+        "allowedValues": [
+          "KEYED",
+          "BARCODE_SCAN",
+          "ACCT_LOOKUP_WITHIN_TRANSACTION",
+          "ACCT_LOOKUP_SHOPPING_PASS",
+          "CONTACTLESS",
+          "B_CONNECTED",
+          "CLIENTELE",
+          "DCR_LOOKUP",
+          "MOBILE_WALLET_GOOGLE",
+          "NEW_ACCT_TRANSACTION",
+          "MOBILE_WALLET_ISIS",
+          "NEW_ACCT_APPROVED",
+          "MOBILE_WALLET_SOFTCARD",
+          "NEW_ACCT_NOT_APPROVED",
+          "PIN",
+          "SWIPED",
+          "TAP",
+          "TOKENIZED"
+        ]
+      },
+      {
+        "path": "transaction.division",
+        "type": "integer",
+        "required": true,
+        "description": "Transaction division number",
+        "allowedValues": []
+      },
+      {
+        "path": "transaction.storeNbr",
+        "type": "integer",
+        "required": true,
+        "description": "Transaction store number",
+        "allowedValues": []
+      },
+      {
+        "path": "transaction.items[].upc",
+        "type": "string",
+        "required": true,
+        "description": "Item UPC",
+        "allowedValues": []
+      },
+      {
+        "path": "transaction.items[].department",
+        "type": "integer",
+        "required": true,
+        "description": "Item department number",
+        "allowedValues": []
+      },
+      {
+        "path": "transaction.items[].vendor",
+        "type": "integer",
+        "required": true,
+        "description": "Item vendor number",
+        "allowedValues": []
+      },
+      {
+        "path": "transaction.items[].classNbr",
+        "type": "integer",
+        "required": true,
+        "description": "Item class number",
+        "allowedValues": []
+      },
+      {
+        "path": "transaction.items[].price",
+        "type": "number",
+        "required": true,
+        "description": "Item price",
+        "allowedValues": []
+      },
+      {
+        "path": "transaction.items[].quantity",
+        "type": "integer",
+        "required": true,
+        "description": "Item quantity",
+        "allowedValues": []
+      }
+    ]
+  },
+  "responseBody": {
+    "success": {
+      "code": "SUCCESS",
+      "discountType": "Employee",
+      "discountPercentApplied": 20,
+      "additionalDiscountPercentApplied": 5,
+      "accountInfo": {
+        "internalAccount": "string",
+        "internalAccountToken": "string",
+        "internalAccountLast4": "1234",
+        "lookupType": "PIID",
+        "rc": "0"
+      },
+      "items": [
+        {
+          "upc": "123456789012",
+          "department": 100,
+          "vendor": 200,
+          "classNbr": 300,
+          "price": 100.0,
+          "quantity": 1,
+          "discountAmount": 25.0
+        }
+      ]
+    },
+    "error": {
+      "code": "BAD_REQUEST",
+      "message": "Missing required header: requestorInfo-clientId"
+    }
+  },
+  "businessRules": [
+    {
+      "id": "BR-001",
+      "name": "Validate Mandatory Headers",
+      "description": "Validate all required headers before processing the request.",
+      "ruleType": "validation",
+      "inputs": [
+        "requestorInfo-clientId",
+        "requestorInfo-subclientId",
+        "x-macys-apikey",
+        "x-hmac-secret"
+      ],
+      "outputs": [
+        "validated headers"
+      ],
+      "failureBehavior": "Return 400 Bad Request with the missing header name."
+    },
+    {
+      "id": "BR-002",
+      "name": "Validate Request Body",
+      "description": "Validate required request body fields before downstream service calls or database lookups.",
+      "ruleType": "validation",
+      "inputs": [
+        "account.encryptInfo",
+        "account.entryMode",
+        "transaction",
+        "transaction.items"
+      ],
+      "outputs": [
+        "validated request body"
+      ],
+      "failureBehavior": "Return 400 Bad Request with the missing field name."
+    },
+    {
+      "id": "BR-003",
+      "name": "Validate Enum Fields",
+      "description": "Validate account.encryptInfo.keyType and account.entryMode against allowed enum values.",
+      "ruleType": "validation",
+      "inputs": [
+        "account.encryptInfo.keyType",
+        "account.entryMode"
+      ],
+      "outputs": [
+        "validated enum fields"
+      ],
+      "failureBehavior": "Return 400 Bad Request with enum validation error."
+    },
+    {
+      "id": "BR-004",
+      "name": "Build Interrogate Account Request",
+      "description": "Build downstream Interrogate Account request using encryption details and entry mode.",
+      "ruleType": "transformation",
+      "inputs": [
+        "account.encryptInfo",
+        "account.entryMode"
+      ],
+      "outputs": [
+        "PIIDLookupRequest"
+      ],
+      "failureBehavior": "Return mapping error if downstream request cannot be built."
+    },
+    {
+      "id": "BR-005",
+      "name": "Invoke Interrogate Account Service",
+      "description": "Call downstream Interrogate Account service to identify account and discount eligibility path.",
+      "ruleType": "external_service",
+      "inputs": [
+        "PIIDLookupRequest",
+        "requestor information headers",
+        "HMAC signature"
+      ],
+      "outputs": [
+        "employeeFlag",
+        "internalAccount",
+        "internalAccountToken",
+        "internalAccountLast4",
+        "lookupType",
+        "rc"
+      ],
+      "failureBehavior": "Return downstream service error when account interrogation fails."
+    },
+    {
+      "id": "BR-006",
+      "name": "Employee Discount Eligibility",
+      "description": "Evaluate employee account profile, discount profile, discount rules, exclusions, and additional discount events.",
+      "ruleType": "database_lookup",
+      "inputs": [
+        "employeeFlag",
+        "transaction.division",
+        "transaction.items"
+      ],
+      "outputs": [
+        "employeeDiscountPercent",
+        "additionalDiscountPercent"
+      ],
+      "failureBehavior": "Continue with no employee discount if no matching rule is found."
+    },
+    {
+      "id": "BR-007",
+      "name": "New Account Discount Eligibility",
+      "description": "Evaluate new account eligibility period, cap amount, discount percentage, and exclusions.",
+      "ruleType": "database_lookup",
+      "inputs": [
+        "employeeFlag",
+        "account information",
+        "transaction.items"
+      ],
+      "outputs": [
+        "newAccountDiscountPercent",
+        "capAmount"
+      ],
+      "failureBehavior": "Continue with no new account discount if no matching rule is found."
+    },
+    {
+      "id": "BR-008",
+      "name": "Calculate Discount",
+      "description": "Calculate item-level discount amount using item price and discount percentage.",
+      "ruleType": "calculation",
+      "inputs": [
+        "item.price",
+        "discountPercent",
+        "additionalDiscountPercent"
+      ],
+      "outputs": [
+        "discountAmount"
+      ],
+      "failureBehavior": "Return calculation error if item price or discount percentage is invalid."
+    },
+    {
+      "id": "BR-009",
+      "name": "Map Final Response",
+      "description": "Map processing result into final API response.",
+      "ruleType": "response_mapping",
+      "inputs": [
+        "discountType",
+        "discountPercentApplied",
+        "additionalDiscountPercentApplied",
+        "accountInfo",
+        "items"
+      ],
+      "outputs": [
+        "final response"
+      ],
+      "failureBehavior": "Return mapped error response if processing fails."
+    }
+  ],
+  "externalServices": [
+    {
+      "name": "Interrogate Account Service",
+      "method": "POST",
+      "url": "/accountinterrogation/api/v1/accountinterrogation/piidLookup",
+      "purpose": "Identifies account details and discount eligibility path.",
+      "authentication": {
+        "type": "HMAC",
+        "algorithm": "SHA-256",
+        "encoding": "Base64",
+        "headerFormat": "HMAC: MAC <signature>"
+      },
+      "requestMapping": [
+        {
+          "source": "account.encryptInfo.encryptedData",
+          "target": "elements[0].encryptInfo.encryptedData"
+        },
+        {
+          "source": "account.encryptInfo.keyType",
+          "target": "elements[0].encryptInfo.keyType"
+        },
+        {
+          "source": "account.encryptInfo.keyName",
+          "target": "elements[0].encryptInfo.keyName"
+        },
+        {
+          "source": "account.encryptInfo.keyVersion",
+          "target": "elements[0].encryptInfo.keyVersion"
+        },
+        {
+          "source": "account.encryptInfo.division",
+          "target": "elements[0].encryptInfo.division"
+        },
+        {
+          "source": "account.encryptInfo.storeNbr",
+          "target": "elements[0].encryptInfo.storeNbr"
+        },
+        {
+          "source": "account.encryptInfo.aesType",
+          "target": "elements[0].encryptInfo.aesType"
+        },
+        {
+          "source": "account.entryMode",
+          "target": "elements[0].entryMode"
+        }
+      ],
+      "responseMapping": [
+        {
+          "source": "employeeFlag",
+          "target": "account.employeeFlag"
+        },
+        {
+          "source": "internalAccount",
+          "target": "account.internalAccount"
+        },
+        {
+          "source": "internalAccountToken",
+          "target": "account.internalAccountToken"
+        },
+        {
+          "source": "internalAccountLast4",
+          "target": "account.internalAccountLast4"
+        },
+        {
+          "source": "lookupType",
+          "target": "account.lookupType"
+        },
+        {
+          "source": "rc",
+          "target": "account.rc"
+        }
+      ]
+    }
+  ],
+  "database": {
+    "tables": [
+      {
+        "name": "Emp_Acct_Profile",
+        "purpose": "Stores employee account profile information.",
+        "operations": [
+          "SELECT"
+        ]
+      },
+      {
+        "name": "Emp_Disc_Profile",
+        "purpose": "Stores employee discount profile rules.",
+        "operations": [
+          "SELECT"
+        ]
+      },
+      {
+        "name": "Disc_By_Dept_Vnd_Class",
+        "purpose": "Stores base discount rules by department, vendor, and class.",
+        "operations": [
+          "SELECT"
+        ]
+      },
+      {
+        "name": "Disc_Dept_Vnd_Class_Exclusions",
+        "purpose": "Stores exclusion rules for base discount.",
+        "operations": [
+          "SELECT"
+        ]
+      },
+      {
+        "name": "Addntl_Disc_Events",
+        "purpose": "Stores additional discount event configuration.",
+        "operations": [
+          "SELECT"
+        ]
+      },
+      {
+        "name": "Addntl_Disc_By_Dept_Vnd_Class",
+        "purpose": "Stores additional discount rules.",
+        "operations": [
+          "SELECT"
+        ]
+      },
+      {
+        "name": "Addtnl_Disc_Dept_Vnd_Class_Exclusions",
+        "purpose": "Stores exclusion rules for additional discount.",
+        "operations": [
+          "SELECT"
+        ]
+      },
+      {
+        "name": "FEED_CONFIG",
+        "purpose": "Stores configurable values such as cap amount and eligibility days.",
+        "operations": [
+          "SELECT"
+        ]
+      }
+    ]
+  },
+  "validations": [
+    {
+      "field": "requestorInfo-clientId",
+      "validationType": "required_header",
+      "required": true,
+      "allowedValues": [],
+      "errorMessage": "Missing required header: requestorInfo-clientId"
+    },
+    {
+      "field": "requestorInfo-subclientId",
+      "validationType": "required_header",
+      "required": true,
+      "allowedValues": [],
+      "errorMessage": "Missing required header: requestorInfo-subclientId"
+    },
+    {
+      "field": "x-macys-apikey",
+      "validationType": "required_header",
+      "required": true,
+      "allowedValues": [],
+      "errorMessage": "Missing required header: x-macys-apikey"
+    },
+    {
+      "field": "x-hmac-secret",
+      "validationType": "required_header",
+      "required": true,
+      "allowedValues": [],
+      "errorMessage": "Missing required header: x-hmac-secret"
+    },
+    {
+      "field": "account.encryptInfo.keyType",
+      "validationType": "enum",
+      "required": true,
+      "allowedValues": [
+        "AES",
+        "RSA",
+        "IRN",
+        "AES_PAN",
+        "TOKEN",
+        "MAN",
+        "AES_RSA_HYBRID",
+        "CLEAR_TEXT",
+        "EZ_ENCRYPTION",
+        "ECV1",
+        "ECV2"
+      ],
+      "errorMessage": "Invalid account.encryptInfo.keyType"
+    },
+    {
+      "field": "account.entryMode",
+      "validationType": "enum",
+      "required": true,
+      "allowedValues": [
+        "KEYED",
+        "BARCODE_SCAN",
+        "ACCT_LOOKUP_WITHIN_TRANSACTION",
+        "ACCT_LOOKUP_SHOPPING_PASS",
+        "CONTACTLESS",
+        "B_CONNECTED",
+        "CLIENTELE",
+        "DCR_LOOKUP",
+        "MOBILE_WALLET_GOOGLE",
+        "NEW_ACCT_TRANSACTION",
+        "MOBILE_WALLET_ISIS",
+        "NEW_ACCT_APPROVED",
+        "MOBILE_WALLET_SOFTCARD",
+        "NEW_ACCT_NOT_APPROVED",
+        "PIN",
+        "SWIPED",
+        "TAP",
+        "TOKENIZED"
+      ],
+      "errorMessage": "Invalid account.entryMode"
+    },
+    {
+      "field": "transaction.items",
+      "validationType": "array_not_empty",
+      "required": true,
+      "allowedValues": [],
+      "errorMessage": "transaction.items must contain at least one item"
+    }
+  ],
+  "traceability": [
+    {
+      "requirementId": "BR-001",
+      "sourceSection": "Business Rules / BR-001 — Validate Mandatory Headers",
+      "targetArtifact": "Node-RED validation node and Excel business_requirements sheet",
+      "notes": "Used to generate mandatory header validation logic."
+    },
+    {
+      "requirementId": "BR-004",
+      "sourceSection": "Business Rules / BR-004 — Build Interrogate Account Request",
+      "targetArtifact": "Node-RED mapping node and Excel endpoint_service_mapping sheet",
+      "notes": "Used to generate downstream PIID lookup request mapping."
+    },
+    {
+      "requirementId": "BR-005",
+      "sourceSection": "External Services / Interrogate Account Service",
+      "targetArtifact": "Node-RED REST call node and Excel external_services sheet",
+      "notes": "Used to generate downstream REST service call configuration."
+    },
+    {
+      "requirementId": "BR-006",
+      "sourceSection": "Business Rules / BR-006 — Employee Discount Eligibility",
+      "targetArtifact": "Excel business_requirements, entities, queries, and endpoint_service_mapping sheets",
+      "notes": "Used to generate employee discount eligibility lookup logic."
+    },
+    {
+      "requirementId": "BR-008",
+      "sourceSection": "Business Rules / BR-008 — Calculate Discount",
+      "targetArtifact": "Node-RED calculation node and Excel business_requirements sheet",
+      "notes": "Used to generate item-level discount calculation logic."
+    }
+  ],
+  "gaps": [
+    {
+      "section": "Database Queries",
+      "missingDetail": "Exact SQL queries are not provided in the source requirement.",
+      "impact": "Excel queries sheet cannot be fully generated without assumptions.",
+      "suggestedResolution": "Add SQL query definitions or database access rules in future phases."
+    },
+    {
+      "section": "Error Mapping",
+      "missingDetail": "Complete downstream error mapping is not provided.",
+      "impact": "Generated error handling may be incomplete.",
+      "suggestedResolution": "Define standard downstream error-to-API response mapping."
+    }
+  ]
+}

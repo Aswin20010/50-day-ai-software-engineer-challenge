@@ -1,0 +1,102 @@
+{
+  "api": {
+    "name": "",
+    "description": "",
+    "method": "",
+    "path": "",
+    "contentType": ""
+  },
+  "headers": [
+    {
+      "name": "",
+      "required": true,
+      "description": ""
+    }
+  ],
+  "requestBody": {
+    "fields": [
+      {
+        "path": "",
+        "type": "",
+        "required": true,
+        "description": "",
+        "allowedValues": []
+      }
+    ]
+  },
+  "responseBody": {
+    "success": {},
+    "error": {}
+  },
+  "businessRules": [
+    {
+      "id": "",
+      "name": "",
+      "description": "",
+      "ruleType": "",
+      "inputs": [],
+      "outputs": [],
+      "failureBehavior": ""
+    }
+  ],
+  "externalServices": [
+    {
+      "name": "",
+      "method": "",
+      "url": "",
+      "purpose": "",
+      "authentication": {
+        "type": "",
+        "algorithm": "",
+        "encoding": "",
+        "headerFormat": ""
+      },
+      "requestMapping": [
+        {
+          "source": "",
+          "target": ""
+        }
+      ],
+      "responseMapping": [
+        {
+          "source": "",
+          "target": ""
+        }
+      ]
+    }
+  ],
+  "database": {
+    "tables": [
+      {
+        "name": "",
+        "purpose": "",
+        "operations": []
+      }
+    ]
+  },
+  "validations": [
+    {
+      "field": "",
+      "validationType": "",
+      "required": true,
+      "allowedValues": [],
+      "errorMessage": ""
+    }
+  ],
+  "traceability": [
+    {
+      "requirementId": "",
+      "sourceSection": "",
+      "targetArtifact": "",
+      "notes": ""
+    }
+  ],
+  "gaps": [
+    {
+      "section": "",
+      "missingDetail": "",
+      "impact": "",
+      "suggestedResolution": ""
+    }
+  ]
+}
