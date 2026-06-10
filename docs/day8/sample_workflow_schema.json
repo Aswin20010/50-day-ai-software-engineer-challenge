@@ -1,0 +1,500 @@
+{
+"workflow_id": "WF-001",
+"workflow_name": "Create Application Message Workflow",
+"description": "Workflow for creating application messages after validation, business rule checks, database insert, and response mapping.",
+"api_endpoint": {
+"endpoint_id": "EP-001",
+"method": "POST",
+"path": "/api/v1/clienteling/messages",
+"operation_name": "createApplicationMessage",
+"description": "Creates a new application message for a division after validating request data and checking active message overlap."
+},
+"input_contract": {
+"required_headers": [
+"Client-Id",
+"Subclient-Id",
+"Division-Id",
+"Store-Number",
+"Trace-Id",
+"Associateid",
+"X-Acting-As-Id",
+"X-Acting-As-Type"
+],
+"optional_headers": [],
+"path_parameters": [],
+"query_parameters": [],
+"body_fields": [
+{
+"name": "title",
+"required": true,
+"type": "string",
+"description": "Title of the application message."
+},
+{
+"name": "message",
+"required": true,
+"type": "string",
+"description": "Body content of the application message."
+},
+{
+"name": "messageSeverity",
+"required": true,
+"type": "string",
+"allowed_values": [
+"INFO",
+"CRITICAL"
+],
+"description": "Severity level of the application message."
+},
+{
+"name": "startDateTime",
+"required": true,
+"type": "datetime",
+"description": "Start date and time when the message becomes active."
+},
+{
+"name": "endDateTime",
+"required": false,
+"type": "datetime",
+"description": "Optional end date and time when the message expires."
+},
+{
+"name": "targetRoles",
+"required": false,
+"type": "array",
+"allowed_values": [
+"Colleague",
+"LL1",
+"LL2",
+"LL3",
+"Admin"
+],
+"description": "Optional list of roles targeted by the application message."
+}
+]
+},
+"workflow_steps": [
+{
+"step_id": "STEP-001",
+"step_name": "Receive Create Message Request",
+"node_type": "HTTP_INPUT",
+"description": "Receives POST request for /api/v1/clienteling/messages.",
+"execution_order": 1,
+"input_source": "HTTP client",
+"output_target": "Raw request context",
+"requirement_reference": "EP-001",
+"error_behavior": "Return HTTP 404 or 405 when route or method is unsupported.",
+"mandatory": true,
+"depends_on": [],
+"consumes": [],
+"produces": [
+"rawRequestContext"
+],
+"success_next_step": "STEP-002",
+"failure_next_step": "ERR-004",
+"review_required": false
+},
+{
+"step_id": "STEP-002",
+"step_name": "Validate Required Headers",
+"node_type": "HEADER_VALIDATION",
+"description": "Validates required request headers including Client-Id, Subclient-Id, Division-Id, Store-Number, Trace-Id, Associateid, X-Acting-As-Id, and X-Acting-As-Type.",
+"execution_order": 2,
+"input_source": "HTTP request headers",
+"output_target": "Validated header context",
+"requirement_reference": "HDR-001",
+"error_behavior": "Return HTTP 400 when required headers are missing.",
+"mandatory": true,
+"depends_on": [
+"STEP-001"
+],
+"consumes": [
+"headers"
+],
+"produces": [
+"validatedHeaders"
+],
+"success_next_step": "STEP-003",
+"failure_next_step": "ERR-001",
+"review_required": false,
+"test_expectations": [
+"Returns HTTP 400 when Client-Id is missing.",
+"Returns HTTP 400 when Division-Id is missing.",
+"Continues processing when all required headers are present."
+]
+},
+{
+"step_id": "STEP-003",
+"step_name": "Validate Header Formats",
+"node_type": "HEADER_VALIDATION",
+"description": "Validates that Division-Id is numeric and X-Acting-As-Type equals global.",
+"execution_order": 3,
+"input_source": "Validated header context",
+"output_target": "Normalized header context",
+"requirement_reference": "HDR-002",
+"error_behavior": "Return HTTP 400 when header values are invalid.",
+"mandatory": true,
+"depends_on": [
+"STEP-002"
+],
+"consumes": [
+"Division-Id",
+"X-Acting-As-Type"
+],
+"produces": [
+"normalizedHeaders"
+],
+"success_next_step": "STEP-004",
+"failure_next_step": "ERR-001",
+"review_required": false,
+"test_expectations": [
+"Returns HTTP 400 when Division-Id is non-numeric.",
+"Returns HTTP 400 when X-Acting-As-Type is not global.",
+"Continues processing when header formats are valid."
+]
+},
+{
+"step_id": "STEP-004",
+"step_name": "Validate Request Body",
+"node_type": "BODY_VALIDATION",
+"description": "Validates required request body fields including title, message, messageSeverity, and startDateTime.",
+"execution_order": 4,
+"input_source": "HTTP request body",
+"output_target": "Validated request body",
+"requirement_reference": "BODY-001",
+"error_behavior": "Return HTTP 400 when required body fields are missing.",
+"mandatory": true,
+"depends_on": [
+"STEP-003"
+],
+"consumes": [
+"requestBody"
+],
+"produces": [
+"validatedRequestBody"
+],
+"success_next_step": "STEP-005",
+"failure_next_step": "ERR-001",
+"review_required": false,
+"test_expectations": [
+"Returns HTTP 400 when title is missing.",
+"Returns HTTP 400 when message is missing.",
+"Returns HTTP 400 when startDateTime is missing.",
+"Continues processing when required body fields are present."
+]
+},
+{
+"step_id": "STEP-005",
+"step_name": "Validate Enum Fields",
+"node_type": "ENUM_VALIDATION",
+"description": "Validates that messageSeverity and targetRoles contain only supported values.",
+"execution_order": 5,
+"input_source": "Validated request body",
+"output_target": "Validated request context",
+"requirement_reference": "ENUM-001",
+"error_behavior": "Return HTTP 400 when enum fields contain unsupported values.",
+"mandatory": true,
+"depends_on": [
+"STEP-004"
+],
+"consumes": [
+"messageSeverity",
+"targetRoles"
+],
+"produces": [
+"validatedRequestContext"
+],
+"success_next_step": "STEP-006",
+"failure_next_step": "ERR-001",
+"review_required": false,
+"test_expectations": [
+"Returns HTTP 400 when messageSeverity is unsupported.",
+"Returns HTTP 400 when targetRoles contains unsupported role.",
+"Continues processing when enum values are valid."
+]
+},
+{
+"step_id": "STEP-006",
+"step_name": "Build Active Message Lookup Context",
+"node_type": "REQUEST_TRANSFORMATION",
+"description": "Builds database lookup context using division, startDateTime, and endDateTime.",
+"execution_order": 6,
+"input_source": "Validated request context",
+"output_target": "Active message lookup payload",
+"requirement_reference": "MAP-001",
+"error_behavior": "Return HTTP 500 when lookup context cannot be built.",
+"mandatory": true,
+"depends_on": [
+"STEP-005"
+],
+"consumes": [
+"Division-Id",
+"startDateTime",
+"endDateTime"
+],
+"produces": [
+"activeMessageLookupPayload"
+],
+"success_next_step": "STEP-007",
+"failure_next_step": "ERR-004",
+"review_required": false
+},
+{
+"step_id": "STEP-007",
+"step_name": "Check Existing Active Messages",
+"node_type": "DATABASE_QUERY",
+"description": "Queries APP_MSGS to determine whether an active message already exists for the same division and overlapping time window.",
+"execution_order": 7,
+"input_source": "Active message lookup payload",
+"output_target": "Existing active message count",
+"requirement_reference": "SQL-APP-002",
+"error_behavior": "Return HTTP 500 when active message lookup query fails.",
+"mandatory": true,
+"depends_on": [
+"STEP-006"
+],
+"consumes": [
+"activeMessageLookupPayload"
+],
+"produces": [
+"activeMessageCount"
+],
+"related_query": "SQL-APP-002",
+"related_entity": "APP_MSGS",
+"success_next_step": "STEP-008",
+"failure_next_step": "ERR-003",
+"review_required": false,
+"generation_notes": "Generate repository query or Node-RED database node for active message overlap check.",
+"test_expectations": [
+"Returns zero when no active overlapping message exists.",
+"Returns count greater than zero when overlapping active message exists.",
+"Returns database error when query execution fails."
+]
+},
+{
+"step_id": "STEP-008",
+"step_name": "Evaluate Message Overlap Rule",
+"node_type": "BUSINESS_RULE",
+"description": "Rejects the request when activeMessageCount is greater than zero.",
+"execution_order": 8,
+"input_source": "Existing active message count",
+"output_target": "Business rule decision",
+"requirement_reference": "BR-001",
+"error_behavior": "Return HTTP 409 when overlapping active message exists.",
+"mandatory": true,
+"depends_on": [
+"STEP-007"
+],
+"consumes": [
+"activeMessageCount"
+],
+"produces": [
+"overlapDecision"
+],
+"condition": "activeMessageCount == 0",
+"success_next_step": "STEP-009",
+"failure_next_step": "ERR-002",
+"review_required": false,
+"test_expectations": [
+"Continues processing when activeMessageCount is zero.",
+"Returns HTTP 409 when activeMessageCount is greater than zero."
+]
+},
+{
+"step_id": "STEP-009",
+"step_name": "Build Application Message Insert Payload",
+"node_type": "REQUEST_TRANSFORMATION",
+"description": "Builds database insert payload using validated headers and request body fields.",
+"execution_order": 9,
+"input_source": "Validated request context",
+"output_target": "Application message insert payload",
+"requirement_reference": "MAP-002",
+"error_behavior": "Return HTTP 500 when insert payload cannot be built.",
+"mandatory": true,
+"depends_on": [
+"STEP-008"
+],
+"consumes": [
+"normalizedHeaders",
+"validatedRequestBody"
+],
+"produces": [
+"applicationMessageInsertPayload"
+],
+"success_next_step": "STEP-010",
+"failure_next_step": "ERR-004",
+"review_required": false
+},
+{
+"step_id": "STEP-010",
+"step_name": "Insert Application Message",
+"node_type": "DATABASE_COMMAND",
+"description": "Inserts a new application message into APP_MSGS and returns the generated message ID.",
+"execution_order": 10,
+"input_source": "Application message insert payload",
+"output_target": "Generated message ID",
+"requirement_reference": "SQL-APP-001",
+"error_behavior": "Return HTTP 500 when database insert fails.",
+"mandatory": true,
+"depends_on": [
+"STEP-009"
+],
+"consumes": [
+"applicationMessageInsertPayload"
+],
+"produces": [
+"messageId"
+],
+"related_query": "SQL-APP-001",
+"related_entity": "APP_MSGS",
+"success_next_step": "STEP-011",
+"failure_next_step": "ERR-003",
+"review_required": false,
+"test_expectations": [
+"Returns generated message ID when insert succeeds.",
+"Returns database error when insert fails."
+]
+},
+{
+"step_id": "STEP-011",
+"step_name": "Map Create Message Success Response",
+"node_type": "RESPONSE_MAPPING",
+"description": "Maps generated message ID into final API success response.",
+"execution_order": 11,
+"input_source": "Generated message ID",
+"output_target": "Final success response body",
+"requirement_reference": "RESP-001",
+"error_behavior": "Return HTTP 500 when response mapping fails.",
+"mandatory": true,
+"depends_on": [
+"STEP-010"
+],
+"consumes": [
+"messageId"
+],
+"produces": [
+"successResponseBody"
+],
+"success_next_step": "STEP-012",
+"failure_next_step": "ERR-004",
+"review_required": false
+},
+{
+"step_id": "STEP-012",
+"step_name": "Return API Response",
+"node_type": "HTTP_RESPONSE",
+"description": "Returns HTTP 201 with generated message ID when processing succeeds.",
+"execution_order": 12,
+"input_source": "Final success response body",
+"output_target": "HTTP client",
+"requirement_reference": "RESP-002",
+"error_behavior": "End request processing.",
+"mandatory": true,
+"depends_on": [
+"STEP-011"
+],
+"consumes": [
+"successResponseBody"
+],
+"produces": [
+"httpResponse"
+],
+"success_next_step": null,
+"failure_next_step": null,
+"review_required": false
+}
+],
+"error_handling": [
+{
+"error_id": "ERR-001",
+"error_type": "VALIDATION_ERROR",
+"http_status": 400,
+"description": "Returned when required headers, body fields, formats, or enum values are invalid.",
+"response_shape": {
+"code": "VALIDATION_ERROR",
+"message": "Invalid request",
+"details": []
+}
+},
+{
+"error_id": "ERR-002",
+"error_type": "BUSINESS_RULE_CONFLICT",
+"http_status": 409,
+"description": "Returned when an active overlapping message already exists for the same division.",
+"response_shape": {
+"code": "BUSINESS_RULE_CONFLICT",
+"message": "An active overlapping message already exists.",
+"details": []
+}
+},
+{
+"error_id": "ERR-003",
+"error_type": "DATABASE_ERROR",
+"http_status": 500,
+"description": "Returned when a database query or command fails.",
+"response_shape": {
+"code": "DATABASE_ERROR",
+"message": "Database operation failed.",
+"details": []
+}
+},
+{
+"error_id": "ERR-004",
+"error_type": "INTERNAL_ERROR",
+"http_status": 500,
+"description": "Returned when request transformation, response mapping, or internal processing fails.",
+"response_shape": {
+"code": "INTERNAL_ERROR",
+"message": "Internal processing error.",
+"details": []
+}
+}
+],
+"traceability": {
+"source_document": "clienteling_message_requirements.md",
+"requirement_ids": [
+"EP-001",
+"HDR-001",
+"HDR-002",
+"BODY-001",
+"ENUM-001",
+"MAP-001",
+"MAP-002",
+"BR-001",
+"RESP-001",
+"RESP-002"
+],
+"business_rule_ids": [
+"BR-001"
+],
+"query_ids": [
+"SQL-APP-001",
+"SQL-APP-002"
+],
+"service_ids": [],
+"entity_ids": [
+"APP_MSGS"
+]
+},
+"review_status": {
+"status": "READY_FOR_REVIEW",
+"review_required": true,
+"ambiguities": [],
+"missing_information": [],
+"generation_ready": false
+},
+"generation_targets": [
+"NODE_RED_FLOW",
+"EXCEL_INTAKE",
+"GO_SERVICE",
+"DOCUMENTATION",
+"TEST_CASES"
+],
+"metadata": {
+"created_on": "2026-06-10",
+"challenge_day": 8,
+"project": "50-Day AI Software Engineer Challenge",
+"version": "0.1",
+"author": "Aswin Tony Kanikairaj"
+}
+}
