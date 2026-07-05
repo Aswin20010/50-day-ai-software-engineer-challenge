@@ -1,0 +1,617 @@
+# Day 32 — Completion Report
+
+## Title
+
+UI Refactor into Smaller Components
+
+---
+
+## Purpose
+
+The purpose of Day 32 was to refactor the existing API Factory UI into smaller, focused components while preserving all existing behavior.
+
+Before Day 32, most of the UI logic lived inside one large file:
+
+```text
+src/app/page.tsx
+```
+
+That page handled requirement extraction, normalized extraction review, rule building, flow generation, generation metadata, adapter warnings, and generated JSON download.
+
+Day 32 improved maintainability by splitting the UI into reusable components and shared helper files.
+
+---
+
+## Day 32 Objective
+
+The main objective was:
+
+```text
+Refactor the UI structure without changing behavior.
+```
+
+This means the following were intentionally preserved:
+
+* Existing internal API routes
+* Existing request payloads
+* Existing response parsing
+* Existing rule mapping behavior
+* Existing normalized schema handling
+* Existing generation metadata display
+* Existing adapter warning display
+* Existing generated JSON download behavior
+
+---
+
+## Work Completed
+
+## Phase 1 — UI Refactor Plan
+
+Created:
+
+```text
+docs/day32/ui_refactor_plan.md
+```
+
+This document defined the refactor approach for splitting the large page into smaller pieces.
+
+It documented:
+
+* Current page responsibilities
+* Proposed folder structure
+* Component responsibility split
+* Shared type plan
+* Helper function plan
+* Existing behavior that must be preserved
+* Refactor risk management
+* Day 32 acceptance criteria
+
+---
+
+## Phase 2 — Shared Types
+
+Created:
+
+```text
+src/types/day32.ts
+```
+
+Moved shared page-level types into one reusable type file.
+
+Types included:
+
+```text
+NormalizedExtraction
+ExtractionMetadata
+BusinessRule
+AdapterWarning
+AdapterMetadata
+GenerationMetadata
+RuleUpdateHandler
+RuleRemoveHandler
+RuleAddHandler
+```
+
+This prevents multiple components from redefining the same interfaces and makes the refactored UI easier to maintain.
+
+---
+
+## Phase 3 — Utility Helpers
+
+Created:
+
+```text
+src/lib/day32/jsonHelpers.ts
+src/lib/day32/ruleHelpers.ts
+src/lib/day32/generationHelpers.ts
+```
+
+Moved reusable helper logic out of `page.tsx`.
+
+### `jsonHelpers.ts`
+
+Includes:
+
+```text
+splitCsv
+parseJson
+```
+
+These helpers support generate payload construction.
+
+### `ruleHelpers.ts`
+
+Includes:
+
+```text
+ruleLabels
+getMissingFieldClass
+```
+
+These helpers support rule display names and missing-field highlighting.
+
+### `generationHelpers.ts`
+
+Includes:
+
+```text
+getGenerationSourceLabel
+getGenerationSourceDescription
+```
+
+These helpers support readable generation metadata rendering.
+
+---
+
+## Phase 4 — Requirement Extraction Components
+
+Created:
+
+```text
+src/components/day32/RequirementExtractionPanel.tsx
+src/components/day32/NormalizedExtractionReview.tsx
+```
+
+### `RequirementExtractionPanel.tsx`
+
+This component now handles the UI for:
+
+* Requirement file upload
+* Extract Requirements from Confluence button
+* Extraction status message
+* Missing fields display
+* Normalized extraction review rendering
+
+### `NormalizedExtractionReview.tsx`
+
+This component now handles the UI for:
+
+* Requirement ID
+* API name
+* Endpoint
+* Operation
+* Schema version
+* Extraction method
+* LLM used flag
+* Generated at timestamp
+* Request statistics
+* Business rule statistics
+* Open questions
+* Gaps
+* Show / hide normalized JSON
+
+Important behavior preserved:
+
+```text
+The extraction API logic remains in page.tsx.
+```
+
+This reduced refactor risk by moving rendering first while keeping the existing API orchestration unchanged.
+
+---
+
+## Phase 5 — Rule Builder Components
+
+Created:
+
+```text
+src/components/day32/RuleBuilderPanel.tsx
+src/components/day32/BusinessRuleCard.tsx
+```
+
+### `RuleBuilderPanel.tsx`
+
+This component now handles:
+
+* Add Nodes button section
+* Rendering the full list of business rule cards
+
+### `BusinessRuleCard.tsx`
+
+This component now renders the dynamic fields for each supported rule type.
+
+Supported rule types include:
+
+```text
+HTTP-IN
+HTTP-RESPONSE
+SOAP-SUBFLOW
+BR-002
+BR-003
+BR-004
+BR-005
+BR-006
+BR-007
+BR-008
+BR-009
+BR-010
+BR-011
+BR-012
+BR-013
+BR-014
+MAP-001
+MAP-GENERIC
+```
+
+Important behavior preserved:
+
+* Rule fields still update by index.
+* Remove button still removes only the selected rule.
+* Missing fields still show red highlighting.
+* SOAP subflow selection still updates the parent state.
+* All existing rule field names were preserved.
+
+---
+
+## Phase 6 — Generation Output Components
+
+Created:
+
+```text
+src/components/day32/GenerationOutputPanel.tsx
+src/components/day32/GenerationMetadataPanel.tsx
+```
+
+### `GenerationOutputPanel.tsx`
+
+This component now handles:
+
+* Generate Flow button
+* Download JSON button
+* Generated JSON textarea
+* Rendering generation metadata panel
+
+### `GenerationMetadataPanel.tsx`
+
+This component now handles:
+
+* Generation metadata summary
+* Generation source label
+* Raw source value
+* Generation version
+* Rule count
+* SOAP subflow status
+* Generated by value
+* Generated flow inspection
+* MAP-001 presence
+* MAP-GENERIC presence
+* Adapter warning count
+* Adapter version
+* Generated rule IDs
+* Normalized adapter details
+* Adapter warnings
+* Full generation metadata JSON
+
+Important behavior preserved:
+
+```text
+The generateFlow and downloadFlow functions remain in page.tsx.
+```
+
+This kept business behavior stable while moving UI rendering into components.
+
+---
+
+## Phase 7 — Updated Orchestrator Page
+
+Updated:
+
+```text
+src/app/page.tsx
+```
+
+The page was refactored into a cleaner orchestrator.
+
+The page now mainly owns:
+
+* State management
+* Rule add/update/remove handlers
+* Requirement extraction API call
+* Flow generation API call
+* Download JSON function
+* Top-level layout composition
+
+The page now delegates rendering to:
+
+```text
+RequirementExtractionPanel
+RuleBuilderPanel
+GenerationOutputPanel
+```
+
+This makes the page easier to understand and maintain.
+
+---
+
+## Phase 8 — Testing Checklist
+
+Created:
+
+```text
+docs/day32/testing_checklist.md
+```
+
+The checklist validates that the refactor did not break existing functionality.
+
+It covers:
+
+* File structure validation
+* Build validation
+* Dev server validation
+* Requirement extraction
+* Missing file validation
+* Normalized extraction review
+* Open questions and gaps
+* Show / hide normalized JSON
+* Rule builder buttons
+* Business rule card rendering
+* Rule updates
+* Rule removal
+* Missing field highlighting
+* Flow generation
+* Generation payload preservation
+* Generation metadata rendering
+* Adapter warnings rendering
+* Full metadata JSON rendering
+* JSON download behavior
+* Error handling
+* Full smoke test
+
+---
+
+## Final File Summary
+
+The following files were added or updated during Day 32:
+
+```text
+docs/day32/ui_refactor_plan.md
+docs/day32/testing_checklist.md
+docs/day32/day32_completion_report.md
+
+src/types/day32.ts
+
+src/lib/day32/jsonHelpers.ts
+src/lib/day32/ruleHelpers.ts
+src/lib/day32/generationHelpers.ts
+
+src/components/day32/RequirementExtractionPanel.tsx
+src/components/day32/NormalizedExtractionReview.tsx
+src/components/day32/RuleBuilderPanel.tsx
+src/components/day32/BusinessRuleCard.tsx
+src/components/day32/GenerationOutputPanel.tsx
+src/components/day32/GenerationMetadataPanel.tsx
+
+src/app/page.tsx
+```
+
+---
+
+## Existing Behavior Preserved
+
+The following behavior was intentionally preserved:
+
+| Behavior                                  | Status    |
+| ----------------------------------------- | --------- |
+| Requirement file upload                   | Preserved |
+| `/api/extract-requirements` call          | Preserved |
+| Extraction status display                 | Preserved |
+| Missing file validation                   | Preserved |
+| Missing fields display                    | Preserved |
+| Normalized extraction review              | Preserved |
+| Open questions display                    | Preserved |
+| Gaps display                              | Preserved |
+| Show / hide normalized JSON               | Preserved |
+| Flow name editing                         | Preserved |
+| Add Nodes buttons                         | Preserved |
+| Rule field editing                        | Preserved |
+| Rule removal                              | Preserved |
+| Missing field highlighting                | Preserved |
+| SOAP subflow toggle behavior              | Preserved |
+| `/api/generate` call                      | Preserved |
+| Generate payload structure                | Preserved |
+| Normalized extraction included in payload | Preserved |
+| Legacy business rules included in payload | Preserved |
+| Generated flow JSON display               | Preserved |
+| Generation metadata display               | Preserved |
+| Generated flow inspection                 | Preserved |
+| Adapter warnings display                  | Preserved |
+| Full metadata JSON section                | Preserved |
+| Download `generated-flow.json`            | Preserved |
+
+---
+
+## Architecture Before Day 32
+
+Before the refactor, the page structure was mostly:
+
+```text
+src/app/page.tsx
+  ├── Types
+  ├── Helper functions
+  ├── State
+  ├── API calls
+  ├── Requirement extraction UI
+  ├── Normalized extraction UI
+  ├── Rule builder UI
+  ├── Generation output UI
+  └── Metadata UI
+```
+
+This made the file difficult to maintain because many responsibilities were mixed together.
+
+---
+
+## Architecture After Day 32
+
+After the refactor, the structure is:
+
+```text
+src/app/page.tsx
+  ├── State
+  ├── API calls
+  ├── Rule handlers
+  ├── Download handler
+  └── Component composition
+
+src/types/day32.ts
+  └── Shared UI and data types
+
+src/lib/day32/
+  ├── jsonHelpers.ts
+  ├── ruleHelpers.ts
+  └── generationHelpers.ts
+
+src/components/day32/
+  ├── RequirementExtractionPanel.tsx
+  ├── NormalizedExtractionReview.tsx
+  ├── RuleBuilderPanel.tsx
+  ├── BusinessRuleCard.tsx
+  ├── GenerationOutputPanel.tsx
+  └── GenerationMetadataPanel.tsx
+```
+
+This structure separates concerns and makes future changes safer.
+
+---
+
+## Why This Refactor Matters
+
+The API Factory UI is expected to keep growing.
+
+Future work may include:
+
+* Excel generation preview
+* Gap analysis visualization
+* Node-RED flow preview
+* Markdown export
+* LLM analysis controls
+* API endpoint sheet generation
+* Workflow schema inspection
+* Validation result display
+* Multi-step factory pipelines
+
+Keeping all of this in one `page.tsx` file would make the project hard to maintain.
+
+Day 32 prepares the UI for future growth by making the codebase more modular.
+
+---
+
+## Risk Management Applied
+
+The refactor was intentionally done in a safe order:
+
+1. Move types first.
+2. Move helpers second.
+3. Move read-only extraction review UI.
+4. Move interactive rule builder UI.
+5. Move generation metadata UI.
+6. Replace the page last.
+7. Keep API logic in the page.
+8. Preserve endpoints and payloads.
+9. Validate with build and smoke tests.
+
+This approach reduces the risk of breaking working behavior.
+
+---
+
+## Validation Commands
+
+Run:
+
+```bash
+npm run build
+```
+
+Expected result:
+
+```text
+Build completes successfully.
+```
+
+Run:
+
+```bash
+npm run dev
+```
+
+Expected result:
+
+```text
+The API Factory UI starts successfully.
+```
+
+---
+
+## Final Smoke Test
+
+Perform this full UI test:
+
+```text
+Upload Confluence export file
+→ Click Extract Requirements from Confluence
+→ Review normalized extraction
+→ Show normalized JSON
+→ Hide normalized JSON
+→ Edit flow name
+→ Review or edit generated rules
+→ Remove one unnecessary rule
+→ Generate flow
+→ Review generation metadata
+→ Expand full generation metadata JSON
+→ Download generated-flow.json
+```
+
+Expected result:
+
+```text
+The workflow works exactly as it did before the Day 32 refactor.
+```
+
+---
+
+## Day 32 Completion Criteria
+
+Day 32 is complete when:
+
+* `src/app/page.tsx` is refactored into an orchestrator page.
+* Shared types exist in `src/types/day32.ts`.
+* Helper functions exist in `src/lib/day32`.
+* Extraction UI is moved to Day 32 components.
+* Rule builder UI is moved to Day 32 components.
+* Generation output UI is moved to Day 32 components.
+* Existing API calls are unchanged.
+* Existing payload structures are unchanged.
+* Existing UI behavior is preserved.
+* `npm run build` passes.
+* Full smoke test passes.
+
+---
+
+## Status
+
+```text
+Day 32 completed successfully.
+```
+
+---
+
+## Next Step
+
+Day 33 should focus on moving API orchestration logic out of `page.tsx` into service/helper modules.
+
+Recommended Day 33 focus:
+
+```text
+Extract frontend API service layer for requirement extraction and flow generation.
+```
+
+Suggested files for Day 33:
+
+```text
+src/services/day33/requirementExtractionService.ts
+src/services/day33/flowGenerationService.ts
+src/types/day33.ts
+docs/day33/api_service_layer_plan.md
+```
+
+This will make `page.tsx` even cleaner and prepare the project for advanced factory workflows.
